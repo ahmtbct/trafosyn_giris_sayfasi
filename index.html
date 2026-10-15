@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TRAFOSYN</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --red: #d9262c;
+      --gray: #555759;
+      --gray-light: #8a8c8e;
+      --bg: #f4f3f0;
+      --card: #ffffff;
+      --shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+      --shadow-hover: 0 12px 30px rgba(0, 0, 0, 0.16);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      background: var(--bg);
+      font-family: "Barlow Semi Condensed", "Arial Narrow", Arial, sans-serif;
+      color: var(--gray);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 16px;
+    }
+
+    h1.page-title {
+      font-size: clamp(22px, 3vw, 32px);
+      font-weight: 600;
+      color: #2b2b2b;
+      margin-bottom: 36px;
+      text-align: center;
+    }
+
+    /* ---------- Yerleşim ---------- */
+    .hub {
+      position: relative;
+      width: 100%;
+      max-width: 1100px;
+      display: grid;
+      grid-template-columns: 1fr 1.6fr 1fr;
+      grid-template-rows: repeat(3, auto);
+      gap: 18px 90px;
+      align-items: center;
+    }
+
+    /* Arka plandaki ince daire */
+    .hub::before {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 640px;
+      height: 640px;
+      transform: translate(-50%, -50%);
+      border: 1px dashed rgba(0, 0, 0, 0.08);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    .connectors {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      overflow: visible;
+    }
+    .connectors line { stroke: var(--red); stroke-width: 2; }
+    .connectors circle { fill: var(--red); }
+
+    .left  { grid-column: 1; }
+    .row-1 { grid-row: 1; }
+    .row-2 { grid-row: 2; }
+    .row-3 { grid-row: 3; }
+    .right { grid-column: 3; }
+    .center-wrap {
+      grid-column: 2;
+      grid-row: 1 / span 3;
+      display: flex;
+      justify-content: center;
+    }
+
+    /* ---------- Kartlar ---------- */
+    .card {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: var(--card);
+      border-radius: 10px;
+      box-shadow: var(--shadow);
+      padding: 14px 18px;
+      text-decoration: none;
+      color: inherit;
+      cursor: pointer;
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+      outline: none;
+    }
+    .card:hover,
+    .card:focus-visible,
+    .card.active {
+      transform: scale(1.06);
+      box-shadow: var(--shadow-hover);
+      z-index: 5;
+    }
+    .card:focus-visible { box-shadow: var(--shadow-hover), 0 0 0 3px rgba(217, 38, 44, 0.35); }
+
+    .card .icon { width: 74px; height: 92px; flex-shrink: 0; }
+    .card .logo-img { display: block; height: 104px; width: auto; max-width: 100%; }
+    .card.main .logo-img { height: 190px; }
+    .card:has(.logo-img) { padding: 8px 12px; justify-content: center; }
+
+    .brand { display: flex; flex-direction: column; line-height: 0.88; }
+    .brand .trafo { color: var(--red); font-weight: 700; font-size: 40px; letter-spacing: 0.5px; }
+    .brand .syn   { color: var(--gray); font-weight: 600; font-size: 46px; letter-spacing: 1px; }
+    .brand .sub   {
+      color: var(--gray);
+      font-weight: 500;
+      font-size: 13px;
+      letter-spacing: 0.6px;
+      margin-top: 8px;
+      white-space: nowrap;
+    }
+
+    /* Merkez logo */
+    .card.main {
+      border: 2px solid var(--red);
+      border-radius: 14px;
+      padding: 28px 40px;
+      gap: 26px;
+    }
+    .card.main .icon { width: 120px; height: 150px; }
+    .card.main .brand .trafo { font-size: 74px; }
+    .card.main .brand .syn   { font-size: 84px; }
+
+    /* ---------- Açıklama pop-up ---------- */
+    .popup {
+      position: fixed;
+      z-index: 100;
+      max-width: 320px;
+      background: #fff;
+      border-top: 4px solid var(--red);
+      border-radius: 8px;
+      box-shadow: 0 14px 40px rgba(0, 0, 0, 0.22);
+      padding: 14px 16px 12px;
+      opacity: 0;
+      transform: translateY(6px);
+      transition: opacity 0.18s ease, transform 0.18s ease;
+      pointer-events: none;
+    }
+    .popup.show { opacity: 1; transform: translateY(0); }
+    .popup h3 {
+      font-size: 19px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      color: #2b2b2b;
+    }
+    .popup h3 span { color: var(--red); }
+    .popup p { font-size: 15px; line-height: 1.4; color: #4a4a4a; font-family: Arial, sans-serif; }
+    .popup .hint {
+      margin-top: 10px;
+      font-size: 12px;
+      color: var(--gray-light);
+      font-family: Arial, sans-serif;
+    }
+
+    /* ---------- Mobil ---------- */
+    @media (max-width: 900px) {
+      .hub {
+        grid-template-columns: 1fr;
+        grid-template-rows: none;
+        gap: 14px;
+        max-width: 420px;
+      }
+      .hub::before, .connectors { display: none; }
+      .left, .right, .center-wrap, .card[class*="row-"] { grid-column: 1; grid-row: auto; }
+      .center-wrap { order: -1; margin-bottom: 12px; }
+      .card.main { width: 100%; justify-content: center; padding: 20px; }
+      .card.main .icon { width: 84px; height: 105px; }
+      .card.main .logo-img { height: 140px; }
+      .card.main .brand .trafo { font-size: 52px; }
+      .card.main .brand .syn   { font-size: 58px; }
+    }
+  </style>
+</head>
+<body>
+
+  <h1 class="page-title">TRAFOSYN Ekosistemi</h1>
+
+  <div class="hub" id="hub">
+    <svg class="connectors" id="connectors" aria-hidden="true"></svg>
+    <!-- Kartlar JavaScript ile oluşturulur (aşağıdaki MODULES listesine bakın) -->
+  </div>
+
+  <div class="popup" id="popup" role="tooltip"></div>
+
+  <script>
+    /* =====================================================================
+       AYARLAR — Bağlantıları ve açıklamaları buradan düzenleyin.
+       url: "" veya "#" bırakılırsa tıklayınca bir yere gidilmez.
+       logo: logos/ klasöründeki görsel. Boş bırakılırsa çizilmiş SVG logo kullanılır.
+       ===================================================================== */
+    const OPEN_IN_NEW_TAB = false;
+
+    const MODULES = [
+      {
+        id: "main",
+        logo: "logos/trafosyn.webp",
+        position: "center",
+        sub: "",
+        url: "#",
+        title: "TRAFOSYN",
+        description: "Transformatör tasarım, analiz ve üretim süreçlerini tek çatı altında toplayan entegre yazılım platformu."
+      },
+      {
+        id: "li",
+        logo: "logos/li-transient.webp",
+        position: "left",
+        sub: "LI Transient",
+        url: "#",
+        title: "LI Transient",
+        description: "Yıldırım darbe (Lightning Impulse) gerilimi altında sargılardaki geçici rejim gerilim dağılımının analizi."
+      },
+      {
+        id: "fee",
+        logo: "logos/fe-electric.webp",
+        position: "left",
+        sub: "FE Electric",
+        url: "#",
+        title: "FE Electric",
+        description: "Sonlu elemanlar yöntemiyle elektrik alan analizi ve izolasyon yapısının değerlendirilmesi."
+      },
+      {
+        id: "fem",
+        logo: "logos/fe-magnetic.webp",
+        position: "left",
+        sub: "FE Magnetic",
+        url: "#",
+        title: "FE Magnetic",
+        description: "Sonlu elemanlar yöntemiyle manyetik alan, kaçak akı ve kısa devre kuvvetlerinin analizi."
+      },
+      {
+        id: "p3d",
+        logo: "",
+        position: "right",
+        sub: "3D Parametric",
+        url: "#",
+        title: "3D Parametric",
+        description: "Tasarım parametrelerinden otomatik olarak transformatörün 3 boyutlu parametrik modelinin oluşturulması."
+      },
+      {
+        id: "ec",
+        logo: "logos/ec-management.webp",
+        position: "right",
+        sub: "EC Management",
+        url: "#",
+        title: "EC Management",
+        description: "Mühendislik değişikliklerinin (Engineering Change) kayıt, onay ve takip süreçlerinin yönetimi."
+      },
+      {
+        id: "plan",
+        logo: "",
+        position: "right",
+        sub: "Planner",
+        url: "#",
+        title: "Planner",
+        description: "Proje ve üretim süreçlerinin iş planı, termin ve kaynak takibi."
+      }
+    ];
+
+    /* =====================================================================
+       Logo ikonları (SVG)
+       ===================================================================== */
+    const GRAY = "#555759";
+    const RED = "#d9262c";
+
+    // Ortak çerçeve + kırmızı dalga
+    function iconFrame(inner, { showAstor = true } = {}) {
+      return `
+        <svg class="icon" viewBox="0 0 100 124" xmlns="http://www.w3.org/2000/svg">
+          <rect x="6" y="16" width="88" height="102" rx="13" fill="#fff" stroke="${GRAY}" stroke-width="7"/>
+          ${inner}
+          <!-- dalganın çerçeveyi kestiği yerdeki boşluk -->
+          <path d="M14 34 C20 34 22 3 36 4 C49 5 46 34 58 22" fill="none" stroke="#fff" stroke-width="10" stroke-linecap="round"/>
+          <path d="M14 34 C20 34 22 3 36 4 C49 5 46 34 58 22" fill="none" stroke="${RED}" stroke-width="4.5" stroke-linecap="round"/>
+          ${showAstor ? `<text x="72" y="33" text-anchor="middle" font-family="Arial, sans-serif" font-weight="700" font-size="10" fill="${GRAY}">ASTOR</text>` : ""}
+        </svg>`;
+    }
+
+    const INNER = {
+      // Merkez: ASTOR yazısı + tuş takımı
+      main: `
+        <text x="52" y="66" text-anchor="middle" font-family="Arial, sans-serif" font-weight="700" font-size="17" fill="${RED}">ASTOR</text>
+        ${[0, 1].map(r => [0, 1, 2].map(c =>
+          `<rect x="${24 + c * 19}" y="${78 + r * 17}" width="14" height="12" rx="2.5" fill="${GRAY}"/>`
+        ).join("")).join("")}`,
+
+      // LI Transient: eksenler + darbe eğrisi
+      li: `
+        <line x1="22" y1="44" x2="22" y2="104" stroke="${GRAY}" stroke-width="1.6"/>
+        <line x1="16" y1="96" x2="84" y2="96" stroke="${GRAY}" stroke-width="1.6"/>
+        <path d="M18 44 L22 40 L26 44" fill="none" stroke="${GRAY}" stroke-width="1.6"/>
+        <path d="M80 92 L84 96 L80 100" fill="none" stroke="${GRAY}" stroke-width="1.6"/>
+        <path d="M22 96 C25 60 27 50 30 52 C40 58 55 72 80 80" fill="none" stroke="${RED}" stroke-width="2.4"/>
+        <line x1="30" y1="52" x2="30" y2="96" stroke="${GRAY}" stroke-width="0.8" stroke-dasharray="2 2"/>`,
+
+      // FE Electric: elektrik alan çizgileri
+      fee: `
+        <rect x="20" y="44" width="10" height="62" fill="#ddd" stroke="${GRAY}" stroke-width="1.2"/>
+        ${[0, 1, 2, 3, 4, 5].map(i =>
+          `<path d="M30 ${48 + i * 10} C ${48 + i * 3} ${46 + i * 10} ${60} ${40 + i * 9} ${84} ${36 + i * 13}" fill="none" stroke="${GRAY}" stroke-width="1"/>`
+        ).join("")}
+        <path d="M30 70 C50 72 62 64 84 72" fill="none" stroke="${RED}" stroke-width="1.4"/>`,
+
+      // FE Magnetic: sargılar + akı çizgileri
+      fem: `
+        <rect x="18" y="44" width="64" height="64" fill="none" stroke="${GRAY}" stroke-width="1"/>
+        ${[0, 1, 2, 3, 4, 5, 6, 7].map(i =>
+          `<line x1="18" y1="${48 + i * 8}" x2="82" y2="${48 + i * 8}" stroke="${GRAY}" stroke-width="0.5" stroke-dasharray="1.5 1.5"/>`
+        ).join("")}
+        <rect x="26" y="50" width="10" height="52" fill="#9a9a9a" stroke="${GRAY}" stroke-width="1"/>
+        <rect x="64" y="50" width="10" height="52" fill="#9a9a9a" stroke="${GRAY}" stroke-width="1"/>
+        <line x1="50" y1="44" x2="50" y2="108" stroke="${GRAY}" stroke-width="1.4"/>
+        <path d="M36 54 C44 46 56 46 64 54 M36 98 C44 106 56 106 64 98" fill="none" stroke="${GRAY}" stroke-width="1"/>`,
+
+      // 3D Parametric: transformatör gövdesi
+      p3d: `
+        <rect x="22" y="58" width="56" height="48" fill="#cfcfcf" stroke="${GRAY}" stroke-width="1.2"/>
+        ${[0, 1, 2, 3, 4, 5, 6].map(i =>
+          `<line x1="${27 + i * 7.5}" y1="62" x2="${27 + i * 7.5}" y2="102" stroke="#8f8f8f" stroke-width="2.4"/>`
+        ).join("")}
+        <rect x="20" y="54" width="60" height="5" fill="#a8a8a8" stroke="${GRAY}" stroke-width="1"/>
+        ${[32, 46, 60].map(x =>
+          `<rect x="${x}" y="38" width="5" height="16" fill="#e2e2e2" stroke="${GRAY}" stroke-width="1"/>
+           ${[0, 1, 2].map(k => `<line x1="${x - 1}" y1="${41 + k * 4}" x2="${x + 6}" y2="${41 + k * 4}" stroke="${GRAY}" stroke-width="1"/>`).join("")}`
+        ).join("")}
+        <rect x="66" y="42" width="12" height="10" rx="3" fill="#bdbdbd" stroke="${GRAY}" stroke-width="1"/>`,
+
+      // EC Management: koyu klasör / doküman
+      ec: `
+        <path d="M18 44 H62 C62 54 70 58 82 58 V106 H18 Z" fill="${GRAY}"/>
+        <path d="M62 44 C62 54 70 58 82 58" fill="none" stroke="#fff" stroke-width="1.5"/>`,
+
+      // Planner: Gantt şeması
+      plan: `
+        <rect x="18" y="44" width="64" height="64" fill="none" stroke="${GRAY}" stroke-width="1.4"/>
+        <line x1="18" y1="52" x2="82" y2="52" stroke="${GRAY}" stroke-width="1.4"/>
+        ${[0, 1, 2, 3, 4, 5].map(i =>
+          `<line x1="${28 + i * 9}" y1="44" x2="${28 + i * 9}" y2="108" stroke="${GRAY}" stroke-width="0.5"/>`
+        ).join("")}
+        ${[[22, 18], [30, 14], [38, 16], [46, 12], [54, 14], [62, 12]].map(([x, w], i) =>
+          `<rect x="${x}" y="${56 + i * 8}" width="${w}" height="4" fill="${GRAY}"/>`
+        ).join("")}
+        <path d="M40 58 V64 M44 66 V72 M54 74 V80 M58 82 V88 M68 90 V96" stroke="${GRAY}" stroke-width="0.8"/>`
+    };
+
+    /* =====================================================================
+       Sayfayı oluştur
+       ===================================================================== */
+    const hub = document.getElementById("hub");
+    const popup = document.getElementById("popup");
+    const isTouch = window.matchMedia("(hover: none)").matches;
+
+    const counters = { left: 0, right: 0 };
+
+    MODULES.forEach(m => {
+      const a = document.createElement("a");
+      a.className = "card" + (m.position === "center" ? " main" : "");
+      a.dataset.id = m.id;
+      a.href = m.url && m.url !== "#" ? m.url : "#";
+      if (OPEN_IN_NEW_TAB) { a.target = "_blank"; a.rel = "noopener"; }
+      a.setAttribute("aria-label", `TRAFOSYN ${m.title} — ${m.description}`);
+      a.innerHTML = m.logo
+        ? `<img class="logo-img" src="${m.logo}" alt="TRAFOSYN ${m.title}">`
+        : `
+        ${iconFrame(INNER[m.id], { showAstor: m.position !== "center" })}
+        <div class="brand">
+          <span class="trafo">TRAFO</span>
+          <span class="syn">SYN</span>
+          ${m.sub ? `<span class="sub">${m.sub.toLocaleUpperCase("en-US")}</span>` : ""}
+        </div>`;
+
+      if (m.position === "center") {
+        const wrap = document.createElement("div");
+        wrap.className = "center-wrap";
+        wrap.appendChild(a);
+        hub.appendChild(wrap);
+      } else {
+        a.classList.add(m.position);
+        a.classList.add("row-" + (++counters[m.position]));
+        hub.appendChild(a);
+      }
+
+      // Pop-up göster / gizle
+      a.addEventListener("mouseenter", () => showPopup(a, m));
+      a.addEventListener("mouseleave", hidePopup);
+      a.addEventListener("focus", () => showPopup(a, m));
+      a.addEventListener("blur", hidePopup);
+
+      a.addEventListener("click", e => {
+        // Dokunmatik ekranda: ilk dokunuş açıklamayı gösterir, ikincisi bağlantıya gider
+        if (isTouch && !a.classList.contains("active")) {
+          e.preventDefault();
+          document.querySelectorAll(".card.active").forEach(c => c.classList.remove("active"));
+          a.classList.add("active");
+          showPopup(a, m);
+          return;
+        }
+        if (!m.url || m.url === "#") e.preventDefault();
+      });
+    });
+
+    // Dokunmatik ekranda boş alana dokununca pop-up kapanır
+    document.addEventListener("click", e => {
+      if (!e.target.closest(".card")) {
+        document.querySelectorAll(".card.active").forEach(c => c.classList.remove("active"));
+        hidePopup();
+      }
+    });
+
+    function showPopup(card, m) {
+      popup.innerHTML = `
+        <h3><span>TRAFO</span>SYN${m.position === "center" ? "" : " " + m.title}</h3>
+        <p>${m.description}</p>
+        <div class="hint">${isTouch ? "Açmak için tekrar dokunun" : "Açmak için tıklayın"}</div>`;
+      popup.classList.add("show");
+
+      const r = card.getBoundingClientRect();
+      const pw = popup.offsetWidth, ph = popup.offsetHeight, gap = 14;
+      let left, top;
+
+      if (window.innerWidth <= 900 || m.position === "center") {
+        left = r.left + r.width / 2 - pw / 2;
+        top = r.bottom + gap;
+        if (top + ph > window.innerHeight) top = r.top - ph - gap;
+      } else if (m.position === "left") {
+        left = r.right + gap;
+        top = r.top + r.height / 2 - ph / 2;
+      } else {
+        left = r.left - pw - gap;
+        top = r.top + r.height / 2 - ph / 2;
+      }
+
+      left = Math.max(8, Math.min(left, window.innerWidth - pw - 8));
+      top = Math.max(8, Math.min(top, window.innerHeight - ph - 8));
+      popup.style.left = left + "px";
+      popup.style.top = top + "px";
+    }
+
+    function hidePopup() {
+      if (document.querySelector(".card.active")) return;
+      popup.classList.remove("show");
+    }
+
+    /* =====================================================================
+       Merkez ile modüller arasındaki kırmızı bağlantı çizgileri
+       ===================================================================== */
+    const svg = document.getElementById("connectors");
+
+    function drawConnectors() {
+      const hr = hub.getBoundingClientRect();
+      const main = hub.querySelector(".card.main").getBoundingClientRect();
+      let out = "";
+
+      hub.querySelectorAll(".card.left, .card.right").forEach(card => {
+        const r = card.getBoundingClientRect();
+        const isLeft = card.classList.contains("left");
+        const x1 = (isLeft ? r.right : r.left) - hr.left;
+        const y1 = r.top + r.height / 2 - hr.top;
+        const x2 = (isLeft ? main.left : main.right) - hr.left;
+        const y2 = Math.min(Math.max(y1, main.top + 28 - hr.top), main.bottom - 28 - hr.top);
+        out += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>
+                <circle cx="${x1}" cy="${y1}" r="4"/>
+                <circle cx="${x2}" cy="${y2}" r="4"/>`;
+      });
+      svg.innerHTML = out;
+    }
+
+    // Çizgileri kartlar zoom yapmadan önceki ölçülere göre çiz
+    window.addEventListener("load", drawConnectors);
+    window.addEventListener("resize", () => { drawConnectors(); hidePopup(); });
+    window.addEventListener("scroll", hidePopup, { passive: true });
+    if (document.fonts) document.fonts.ready.then(drawConnectors);
+    drawConnectors();
+  </script>
+</body>
+</html>
