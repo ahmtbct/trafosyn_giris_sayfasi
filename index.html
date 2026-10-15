@@ -116,6 +116,9 @@
     .card:focus-visible { box-shadow: var(--shadow-hover), 0 0 0 3px rgba(217, 38, 44, 0.35); }
 
     .card .icon { width: 74px; height: 92px; flex-shrink: 0; }
+    .card .logo-img { display: block; height: 104px; width: auto; max-width: 100%; }
+    .card.main .logo-img { height: 190px; }
+    .card:has(.logo-img) { padding: 8px 12px; justify-content: center; }
 
     .brand { display: flex; flex-direction: column; line-height: 0.88; }
     .brand .trafo { color: var(--red); font-weight: 700; font-size: 40px; letter-spacing: 0.5px; }
@@ -184,6 +187,7 @@
       .center-wrap { order: -1; margin-bottom: 12px; }
       .card.main { width: 100%; justify-content: center; padding: 20px; }
       .card.main .icon { width: 84px; height: 105px; }
+      .card.main .logo-img { height: 140px; }
       .card.main .brand .trafo { font-size: 52px; }
       .card.main .brand .syn   { font-size: 58px; }
     }
@@ -204,12 +208,14 @@
     /* =====================================================================
        AYARLAR — Bağlantıları ve açıklamaları buradan düzenleyin.
        url: "" veya "#" bırakılırsa tıklayınca bir yere gidilmez.
+       logo: logos/ klasöründeki görsel. Boş bırakılırsa çizilmiş SVG logo kullanılır.
        ===================================================================== */
     const OPEN_IN_NEW_TAB = false;
 
     const MODULES = [
       {
         id: "main",
+        logo: "logos/trafosyn.png",
         position: "center",
         sub: "",
         url: "#",
@@ -218,6 +224,7 @@
       },
       {
         id: "li",
+        logo: "logos/li-transient.webp",
         position: "left",
         sub: "LI Transient",
         url: "#",
@@ -226,6 +233,7 @@
       },
       {
         id: "fee",
+        logo: "logos/fe-electric.webp",
         position: "left",
         sub: "FE Electric",
         url: "#",
@@ -234,6 +242,7 @@
       },
       {
         id: "fem",
+        logo: "logos/fe-magnetic.webp",
         position: "left",
         sub: "FE Magnetic",
         url: "#",
@@ -242,6 +251,7 @@
       },
       {
         id: "p3d",
+        logo: "",
         position: "right",
         sub: "3D Parametric",
         url: "#",
@@ -250,6 +260,7 @@
       },
       {
         id: "ec",
+        logo: "logos/ec-management.webp",
         position: "right",
         sub: "EC Management",
         url: "#",
@@ -258,6 +269,7 @@
       },
       {
         id: "plan",
+        logo: "",
         position: "right",
         sub: "Planner",
         url: "#",
@@ -368,7 +380,9 @@
       a.href = m.url && m.url !== "#" ? m.url : "#";
       if (OPEN_IN_NEW_TAB) { a.target = "_blank"; a.rel = "noopener"; }
       a.setAttribute("aria-label", `TRAFOSYN ${m.title} — ${m.description}`);
-      a.innerHTML = `
+      a.innerHTML = m.logo
+        ? `<img class="logo-img" src="${m.logo}" alt="TRAFOSYN ${m.title}">`
+        : `
         ${iconFrame(INNER[m.id], { showAstor: m.position !== "center" })}
         <div class="brand">
           <span class="trafo">TRAFO</span>
