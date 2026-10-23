@@ -47,9 +47,8 @@
       max-width: 1100px;
       display: grid;
       grid-template-columns: 1fr 1.6fr 1fr;
-      grid-template-rows: repeat(3, auto);
       gap: 18px 90px;
-      align-items: center;
+      align-items: stretch;
     }
 
     /* Arka plandaki ince daire */
@@ -77,15 +76,20 @@
     .connectors line { stroke: var(--red); stroke-width: 2; }
     .connectors circle { fill: var(--red); }
 
-    .left  { grid-column: 1; }
-    .row-1 { grid-row: 1; }
-    .row-2 { grid-row: 2; }
-    .row-3 { grid-row: 3; }
-    .right { grid-column: 3; }
+    /* Sol ve sağ sütun: kart sayısı farklı olsa da dikeyde dengeli dağılır */
+    .side {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-around;
+      gap: 18px;
+    }
+    .side-left  { grid-column: 1; }
+    .side-right { grid-column: 3; }
     .center-wrap {
       grid-column: 2;
-      grid-row: 1 / span 3;
+      grid-row: 1;
       display: flex;
+      align-items: center;
       justify-content: center;
     }
 
@@ -178,12 +182,12 @@
     @media (max-width: 900px) {
       .hub {
         grid-template-columns: 1fr;
-        grid-template-rows: none;
         gap: 14px;
         max-width: 420px;
       }
       .hub::before, .connectors { display: none; }
-      .left, .right, .center-wrap, .card[class*="row-"] { grid-column: 1; grid-row: auto; }
+      .side, .center-wrap { grid-column: 1; grid-row: auto; }
+      .side { gap: 14px; }
       .center-wrap { order: -1; margin-bottom: 12px; }
       .card.main { width: 100%; justify-content: center; padding: 20px; }
       .card.main .icon { width: 84px; height: 105px; }
@@ -266,6 +270,15 @@
         url: "#",
         title: "EC Management",
         description: "Mühendislik değişikliklerinin (Engineering Change) kayıt, onay ve takip süreçlerinin yönetimi."
+      },
+      {
+        id: "dfq",
+        logo: "logos/design-for-quality.webp",
+        position: "left",
+        sub: "Des. for Qua.",
+        url: "#",
+        title: "Design for Quality",
+        description: "Tasarım aşamasında kalite gereksinimlerinin kontrol listeleriyle doğrulanması ve takibi."
       },
       {
         id: "plan",
@@ -371,7 +384,12 @@
     const popup = document.getElementById("popup");
     const isTouch = window.matchMedia("(hover: none)").matches;
 
-    const counters = { left: 0, right: 0 };
+    const sides = {};
+    ["left", "right"].forEach(pos => {
+      sides[pos] = document.createElement("div");
+      sides[pos].className = "side side-" + pos;
+      hub.appendChild(sides[pos]);
+    });
 
     MODULES.forEach(m => {
       const a = document.createElement("a");
@@ -397,8 +415,7 @@
         hub.appendChild(wrap);
       } else {
         a.classList.add(m.position);
-        a.classList.add("row-" + (++counters[m.position]));
-        hub.appendChild(a);
+        sides[m.position].appendChild(a);
       }
 
       // Pop-up göster / gizle
